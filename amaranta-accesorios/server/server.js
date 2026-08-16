@@ -113,12 +113,10 @@ app.use(
     store: new PgSession({
       pool,
       tableName: 'session',
-      createTableIfMissing: true,
+      createTableIfMissing: true
     }),
 
-    secret:
-      process.env.SESSION_SECRET ||
-      'amaranta_secret_2026',
+    secret: process.env.SESSION_SECRET,
 
     resave: false,
 
@@ -128,13 +126,10 @@ app.use(
 
     cookie: {
       httpOnly: true,
-
+      secure: process.env.VERCEL === '1',
       sameSite: 'lax',
-
-      secure: process.env.NODE_ENV === 'production',
-
-      maxAge: 1000 * 60 * 60 * 8,
-    },
+      maxAge: 1000 * 60 * 60 * 8
+    }
   })
 );
 
@@ -2129,6 +2124,4 @@ if (require.main === module) {
   });
 }
 
-// IMPORTANTE:
-// Vercel necesita recibir la instancia de Express.
 module.exports = app;

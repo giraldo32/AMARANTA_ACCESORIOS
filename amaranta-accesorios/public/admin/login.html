@@ -197,28 +197,19 @@
   </div>
 
 <script>
-
-const loginForm =
-  document.getElementById('loginForm');
-
-const loginButton =
-  document.getElementById('loginButton');
-
-const errorMessage =
-  document.getElementById('errorMessage');
-
+const loginForm = document.getElementById('loginForm');
+const loginButton = document.getElementById('loginButton');
+const errorMessage = document.getElementById('errorMessage');
 
 loginForm.addEventListener('submit', async (event) => {
-
   event.preventDefault();
 
   errorMessage.style.display = 'none';
+  errorMessage.textContent = '';
 
   loginButton.disabled = true;
-
   loginButton.innerHTML =
-    '<span class="spinner-border spinner-border-sm me-2"></span>' +
-    'Ingresando...';
+    '<span class="spinner-border spinner-border-sm me-2"></span>Ingresando...';
 
   const username =
     document.getElementById('username').value.trim();
@@ -227,60 +218,61 @@ loginForm.addEventListener('submit', async (event) => {
     document.getElementById('password').value;
 
   try {
-
     const response = await fetch('/api/login', {
-
       method: 'POST',
-
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
-
       credentials: 'include',
-
       body: JSON.stringify({
         username,
         password
       })
-
     });
 
-    const data =
-      await response.json();
+    const contentType =
+      response.headers.get('content-type') || '';
 
-    if (!response.ok || !data.success) {
+    let data;
+
+    if (contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      const text = await response.text();
 
       throw new Error(
-        data.message ||
-        'Usuario o contraseña incorrectos'
+        `El servidor respondió inesperadamente (${response.status}).`
       );
-
     }
 
-    window.location.href =
-      '/admin/dashboard.html';
+    if (!response.ok || !data.success) {
+      throw new Error(
+        data.message ||
+        'Usuario o contraseña incorrectos.'
+      );
+    }
+
+    window.location.replace(
+      '/admin/dashboard.html'
+    );
 
   } catch (error) {
-
-    console.error(error);
+    console.error(
+      'Error de inicio de sesión:',
+      error
+    );
 
     errorMessage.textContent =
       error.message ||
       'No se pudo iniciar sesión.';
 
-    errorMessage.style.display =
-      'block';
+    errorMessage.style.display = 'block';
 
     loginButton.disabled = false;
 
     loginButton.innerHTML =
-      '<i class="bi bi-box-arrow-in-right me-2"></i>' +
-      'Iniciar sesión';
+      '<i class="bi bi-box-arrow-in-right me-2"></i>Iniciar sesión';
   }
-
 });
-
 </script>
-
-</body>
-</html>

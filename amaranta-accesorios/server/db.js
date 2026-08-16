@@ -2,17 +2,28 @@ require('dotenv').config();
 
 const { Pool } = require('pg');
 
-function buildSslConfig() {
-  if (process.env.NODE_ENV === 'production' || /sslmode=require/i.test(process.env.DATABASE_URL || '')) {
-    return { rejectUnauthorized: false };
-  }
+const isProduction =
+  process.env.VERCEL === '1' ||
+  process.env.NODE_ENV === 'production';
 
-  return false;
+if (!process.env.DATABASE_URL) {
+  console.error('❌ DATABASE_URL no está configurada.');
 }
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: buildSslConfig(),
+
+  ssl: isProduction
+    ? {
+        rejectUnauthorized: false
+      }
+    : false,
+
+  max: 5,
+
+  idleTimeoutMillis: 30000,
+
+  connectionTimeoutMillis: 10000
 });
 
 pool.on('connect', () => {
@@ -20,12 +31,22 @@ pool.on('connect', () => {
 });
 
 pool.on('error', (err) => {
-  console.error('❌ Error inesperado en la conexión de PostgreSQL:', err);
-  process.exit(1);
+  console.error(
+    '❌ Error inesperado en PostgreSQL:',
+    err
+  );
 });
 
+async function query(text, params) {
+  return pool.query(text, params);
+}
+
+async function getClient() {
+  return pool.connect();
+}
+
 module.exports = {
-  query: (text, params) => pool.query(text, params),
-  getClient: () => pool.connect(),
-  pool,
+  query,
+  getClient,
+  pool
 };
