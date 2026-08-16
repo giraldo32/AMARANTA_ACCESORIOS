@@ -12,7 +12,7 @@ const { query, pool } = require('./db');
 
 const app = express();
 
-const publicDir = path.join(__dirname, 'public');
+const publicDir = path.join(__dirname, '..', 'public');
 const uploadDir = path.join(publicDir, 'images', 'uploads');
 
 // ======================================================
@@ -1847,3 +1847,14 @@ app.use((err, req, res, next) => {
 // ======================================================
 
 module.exports = app;
+
+// ======================================================
+// INICIO DEL SERVIDOR (solo en desarrollo local)
+// ======================================================
+
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+  });
+}
