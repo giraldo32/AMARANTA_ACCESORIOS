@@ -12,47 +12,29 @@ const { query, pool } = require('./db');
 
 const app = express();
 
-const PORT = process.env.PORT || 3000;
-
 const publicDir = path.join(__dirname, 'public');
 const uploadDir = path.join(publicDir, 'images', 'uploads');
 
 // ======================================================
-// CONFIGURACIÓN GENERAL
+// CONFIGURACIÓN
 // ======================================================
 
 app.set('trust proxy', 1);
 
 app.use(cors({
   origin: true,
-  credentials: true,
+  credentials: true
 }));
 
-app.use(express.json({
-  limit: '2mb',
-}));
-
-app.use(express.urlencoded({
-  extended: true,
-}));
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true }));
 
 // ======================================================
-// CARPETA DE IMÁGENES
-// ======================================================
-//
-// IMPORTANTE:
-// Esta carpeta funciona para desarrollo local.
-// En Vercel, el almacenamiento local NO debe utilizarse
-// como almacenamiento permanente.
-//
-// Para producción se recomienda Vercel Blob, Cloudinary
-// u otro almacenamiento externo.
+// ARCHIVOS
 // ======================================================
 
 if (!process.env.VERCEL) {
-  fs.mkdirSync(uploadDir, {
-    recursive: true,
-  });
+  fs.mkdirSync(uploadDir, { recursive: true });
 }
 
 // ======================================================
@@ -65,47 +47,44 @@ const storage = multer.diskStorage({
   },
 
   filename: (req, file, cb) => {
-    const extension = path.extname(file.originalname).toLowerCase();
+    const extension = path
+      .extname(file.originalname)
+      .toLowerCase();
 
-    const safeName =
-      `producto-${Date.now()}-${Math.round(Math.random() * 1e9)}${extension}`;
-
-    cb(null, safeName);
-  },
+    cb(
+      null,
+      `producto-${Date.now()}-${Math.round(Math.random() * 1e9)}${extension}`
+    );
+  }
 });
 
 const upload = multer({
   storage,
-
   limits: {
-    fileSize: 5 * 1024 * 1024,
+    fileSize: 5 * 1024 * 1024
   },
 
   fileFilter: (req, file, cb) => {
-    const allowed = [
-      '.png',
-      '.jpg',
-      '.jpeg',
-    ];
+    const allowed = ['.png', '.jpg', '.jpeg'];
 
     const extension = path
       .extname(file.originalname)
       .toLowerCase();
 
-    if (allowed.includes(extension)) {
-      cb(null, true);
-      return;
+    if (!allowed.includes(extension)) {
+      return cb(
+        new Error(
+          'Formato de imagen no permitido. Usa PNG, JPG o JPEG.'
+        )
+      );
     }
 
-    cb(
-      new Error('Formato de imagen no permitido. Usa PNG, JPG o JPEG.'),
-      false
-    );
-  },
+    cb(null, true);
+  }
 });
 
 // ======================================================
-// SESIONES
+// SESIONES POSTGRESQL
 // ======================================================
 
 app.use(
@@ -116,7 +95,9 @@ app.use(
       createTableIfMissing: true
     }),
 
-    secret: process.env.SESSION_SECRET,
+    secret:
+      process.env.SESSION_SECRET ||
+      'amaranta-session-secret',
 
     resave: false,
 
@@ -124,10 +105,17 @@ app.use(
 
     rolling: true,
 
+    proxy: true,
+
     cookie: {
       httpOnly: true,
-      secure: process.env.VERCEL === '1',
+
+      secure:
+        process.env.VERCEL === '1' ||
+        process.env.VERCEL === 'true',
+
       sameSite: 'lax',
+
       maxAge: 1000 * 60 * 60 * 8
     }
   })
@@ -143,14 +131,6 @@ function sendPublicFile(res, fileName) {
   );
 }
 
-function buildWhatsAppRedirect(text) {
-  const message =
-    text ||
-    'Hola Amaranta Accesorios, quiero obtener información sobre sus productos.';
-
-  return `https://wa.me/573113353145?text=${encodeURIComponent(message)}`;
-}
-
 function requireApiAuth(req, res, next) {
   if (req.session?.user?.id) {
     return next();
@@ -158,7 +138,7 @@ function requireApiAuth(req, res, next) {
 
   return res.status(401).json({
     success: false,
-    message: 'No autenticado',
+    message: 'No autenticado'
   });
 }
 
@@ -171,28 +151,30 @@ function requirePageAuth(req, res, next) {
 }
 
 function toInt(value) {
-  const parsed = Number.parseInt(value, 10);
+  const number = Number.parseInt(value, 10);
 
-  return Number.isNaN(parsed)
+  return Number.isNaN(number)
     ? null
-    : parsed;
+    : number;
 }
 
-function normalizeAuthPayload(body) {
+function normalizeAuthPayload(body = {}) {
   return {
-    username:
+    username: String(
       body.username ||
       body.nombre_usuario ||
-      '',
+      ''
+    ).trim(),
 
-    password:
+    password: String(
       body.password ||
       body.contrasena ||
-      '',
+      ''
+    )
   };
 }
 
-function normalizeProductPayload(body) {
+function normalizeProductPayload(body = {}) {
   return {
     name:
       body.name ||
@@ -237,13 +219,7 @@ function normalizeProductPayload(body) {
             body.is_active === 'true' ||
             body.is_active === '1'
           )
-        : body.activo !== undefined
-          ? (
-              body.activo === true ||
-              body.activo === 'true' ||
-              body.activo === '1'
-            )
-          : true,
+        : true
   };
 }
 
@@ -253,12 +229,11 @@ function normalizeOrderItems(items) {
   }
 
   return items
-    .map((item) => ({
-      productId:
-        toInt(
-          item.product_id ??
-          item.productId
-        ),
+    .map(item => ({
+      productId: toInt(
+        item.product_id ??
+        item.productId
+      ),
 
       quantity:
         Number.parseInt(
@@ -276,10 +251,10 @@ function normalizeOrderItems(items) {
       itemSize:
         item.item_size ||
         item.size ||
-        '',
+        ''
     }))
     .filter(
-      (item) =>
+      item =>
         item.productId &&
         item.quantity > 0
     );
@@ -317,6 +292,103 @@ app.get(
 );
 
 // ======================================================
+// LOGIN
+// ======================================================
+
+app.post('/api/login', async (req, res) => {
+  try {
+    const {
+      username,
+      password
+    } = normalizeAuthPayload(req.body);
+
+    if (!username || !password) {
+      return res.status(400).json({
+        success: false,
+        message:
+          'Usuario y contraseña son requeridos'
+      });
+    }
+
+    const result = await query(
+      `
+      SELECT
+        id,
+        username,
+        password
+      FROM users
+      WHERE username = $1
+      LIMIT 1
+      `,
+      [username]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({
+        success: false,
+        message:
+          'Usuario o contraseña incorrectos'
+      });
+    }
+
+    const user = result.rows[0];
+
+    const validPassword =
+      await bcrypt.compare(
+        password,
+        user.password
+      );
+
+    if (!validPassword) {
+      return res.status(401).json({
+        success: false,
+        message:
+          'Usuario o contraseña incorrectos'
+      });
+    }
+
+    req.session.user = {
+      id: user.id,
+      username: user.username
+    };
+
+    req.session.save(error => {
+      if (error) {
+        console.error(
+          'Error guardando sesión:',
+          error
+        );
+
+        return res.status(500).json({
+          success: false,
+          message:
+            'No se pudo guardar la sesión'
+        });
+      }
+
+      return res.json({
+        success: true,
+        data: req.session.user,
+        message:
+          'Inicio de sesión exitoso'
+      });
+    });
+
+  } catch (error) {
+    console.error(
+      'Error en /api/login:',
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        'Error en el servidor'
+    });
+  }
+});
+
+// ======================================================
 // SESIÓN
 // ======================================================
 
@@ -324,13 +396,43 @@ app.get('/api/session', (req, res) => {
   if (req.session?.user?.id) {
     return res.json({
       success: true,
-      data: req.session.user,
+      data: req.session.user
     });
   }
 
-  return res.json({
+  return res.status(401).json({
     success: false,
-    message: 'No hay sesión activa',
+    message:
+      'No hay sesión activa'
+  });
+});
+
+// ======================================================
+// LOGOUT
+// ======================================================
+
+app.get('/api/logout', (req, res) => {
+  req.session.destroy(error => {
+    if (error) {
+      console.error(
+        'Error cerrando sesión:',
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          'No se pudo cerrar la sesión'
+      });
+    }
+
+    res.clearCookie('connect.sid');
+
+    return res.json({
+      success: true,
+      message:
+        'Sesión cerrada correctamente'
+    });
   });
 });
 
@@ -344,148 +446,12 @@ app.get('/whatsapp', (req, res) => {
     'Hola Amaranta Accesorios, quiero obtener información sobre sus productos.';
 
   return res.redirect(
-    buildWhatsAppRedirect(text)
+    `https://wa.me/573113353145?text=${encodeURIComponent(text)}`
   );
 });
 
 // ======================================================
-// LOGIN
-// ======================================================
-
-app.post('/api/login', async (req, res) => {
-  const {
-    username,
-    password,
-  } = normalizeAuthPayload(req.body);
-
-  if (!username || !password) {
-    return res.status(400).json({
-      success: false,
-      message:
-        'Usuario y contraseña son requeridos',
-    });
-  }
-
-  try {
-    const result = await query(
-      `
-      SELECT
-        id,
-        username,
-        password
-      FROM users
-      WHERE username = $1
-      `,
-      [username]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(401).json({
-        success: false,
-        message:
-          'Usuario o contraseña incorrectos',
-      });
-    }
-
-    const user = result.rows[0];
-
-    const matches =
-      await bcrypt.compare(
-        password,
-        user.password
-      );
-
-    if (!matches) {
-      return res.status(401).json({
-        success: false,
-        message:
-          'Usuario o contraseña incorrectos',
-      });
-    }
-
-    req.session.user = {
-      id: user.id,
-      username: user.username,
-    };
-
-    return res.json({
-      success: true,
-      data: req.session.user,
-      message:
-        'Inicio de sesión exitoso',
-    });
-
-  } catch (error) {
-    console.error(
-      'Error en login:',
-      error
-    );
-
-    return res.status(500).json({
-      success: false,
-      message:
-        'Error en el servidor',
-    });
-  }
-});
-
-// ======================================================
-// LOGOUT
-// ======================================================
-
-app.get('/api/logout', (req, res) => {
-  req.session.destroy((error) => {
-    if (error) {
-      return res.status(500).json({
-        success: false,
-        message:
-          'No se pudo cerrar la sesión',
-      });
-    }
-
-    res.clearCookie(
-      'connect.sid'
-    );
-
-    return res.json({
-      success: true,
-      message:
-        'Sesión cerrada correctamente',
-    });
-  });
-});
-
-// ======================================================
-// SUBIDA DE IMÁGENES
-// ======================================================
-
-app.post(
-  '/api/upload-image',
-  requireApiAuth,
-  upload.single('image'),
-  (req, res) => {
-
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message:
-          'No se subió ninguna imagen',
-      });
-    }
-
-    return res.json({
-      success: true,
-
-      data: {
-        image_url:
-          `/images/uploads/${req.file.filename}`,
-      },
-    });
-  }
-);
-
-// ======================================================
-// PRODUCTOS
+// PRODUCTOS - LISTAR
 // ======================================================
 
 app.get('/api/products', async (req, res) => {
@@ -532,13 +498,15 @@ app.get('/api/products', async (req, res) => {
         `%${search}%`
       );
 
-      filters.push(
-        `(p.name ILIKE $${params.length}
-        OR COALESCE(p.description, '') ILIKE $${params.length})`
-      );
+      filters.push(`
+        (
+          p.name ILIKE $${params.length}
+          OR COALESCE(p.description, '') ILIKE $${params.length}
+        )
+      `);
     }
 
-    const whereClause =
+    const where =
       filters.length
         ? `WHERE ${filters.join(' AND ')}`
         : '';
@@ -573,7 +541,7 @@ app.get('/api/products', async (req, res) => {
       LEFT JOIN categories c
         ON c.id = p.category_id
 
-      ${whereClause}
+      ${where}
 
       ORDER BY
         p.created_at DESC,
@@ -584,22 +552,26 @@ app.get('/api/products', async (req, res) => {
 
     return res.json({
       success: true,
-      data: result.rows,
+      data: result.rows
     });
 
   } catch (error) {
     console.error(
-      'Error al obtener productos:',
+      'Error productos:',
       error
     );
 
     return res.status(500).json({
       success: false,
       message:
-        'Error en el servidor',
+        'Error en el servidor'
     });
   }
 });
+
+// ======================================================
+// PRODUCTO INDIVIDUAL
+// ======================================================
 
 app.get(
   '/api/products/:id',
@@ -608,78 +580,66 @@ app.get(
       const result = await query(
         `
         SELECT
-          p.id,
-          p.name,
-          p.description,
-          p.price,
-          p.stock_quantity,
-          p.image_url,
-          p.category_id,
-          c.name AS category_name,
-          p.is_active,
-          p.created_at,
-          p.updated_at
-
+          p.*,
+          c.name AS category_name
         FROM products p
-
         LEFT JOIN categories c
           ON c.id = p.category_id
-
         WHERE p.id = $1
         `,
         [req.params.id]
       );
 
-      if (result.rows.length === 0) {
+      if (!result.rows.length) {
         return res.status(404).json({
           success: false,
           message:
-            'Producto no encontrado',
+            'Producto no encontrado'
         });
       }
 
       return res.json({
         success: true,
-        data: result.rows[0],
+        data: result.rows[0]
       });
 
     } catch (error) {
-      console.error(
-        'Error al obtener producto:',
-        error
-      );
+      console.error(error);
 
       return res.status(500).json({
         success: false,
         message:
-          'Error en el servidor',
+          'Error en el servidor'
       });
     }
   }
 );
 
+// ======================================================
+// CREAR PRODUCTO
+// ======================================================
+
 app.post(
   '/api/products',
   requireApiAuth,
   async (req, res) => {
-
-    const payload =
-      normalizeProductPayload(
-        req.body
-      );
-
-    if (
-      !payload.name ||
-      !Number.isFinite(payload.price)
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          'Nombre y precio son requeridos',
-      });
-    }
-
     try {
+      const data =
+        normalizeProductPayload(
+          req.body
+        );
+
+      if (
+        !data.name ||
+        !Number.isFinite(data.price)
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            'Nombre y precio son requeridos'
+        });
+      }
+
       const result = await query(
         `
         INSERT INTO products
@@ -692,28 +652,18 @@ app.post(
           category_id,
           is_active
         )
-
         VALUES
-        (
-          $1,
-          $2,
-          $3,
-          $4,
-          $5,
-          $6,
-          $7
-        )
-
+        ($1,$2,$3,$4,$5,$6,$7)
         RETURNING *
         `,
         [
-          payload.name,
-          payload.description,
-          payload.price,
-          payload.stockQuantity,
-          payload.imageUrl || null,
-          payload.categoryId,
-          payload.isActive,
+          data.name,
+          data.description,
+          data.price,
+          data.stockQuantity,
+          data.imageUrl || null,
+          data.categoryId,
+          data.isActive
         ]
       );
 
@@ -721,50 +671,38 @@ app.post(
         success: true,
         data: result.rows[0],
         message:
-          'Producto creado',
+          'Producto creado'
       });
 
     } catch (error) {
-      console.error(
-        'Error al crear producto:',
-        error
-      );
+      console.error(error);
 
       return res.status(500).json({
         success: false,
         message:
-          'Error en el servidor',
+          'Error en el servidor'
       });
     }
   }
 );
 
+// ======================================================
+// ACTUALIZAR PRODUCTO
+// ======================================================
+
 app.put(
   '/api/products/:id',
   requireApiAuth,
   async (req, res) => {
-
-    const payload =
-      normalizeProductPayload(
-        req.body
-      );
-
-    if (
-      !payload.name ||
-      !Number.isFinite(payload.price)
-    ) {
-      return res.status(400).json({
-        success: false,
-        message:
-          'Nombre y precio son requeridos',
-      });
-    }
-
     try {
+      const data =
+        normalizeProductPayload(
+          req.body
+        );
+
       const result = await query(
         `
         UPDATE products
-
         SET
           name = $1,
           description = $2,
@@ -774,28 +712,26 @@ app.put(
           category_id = $6,
           is_active = $7,
           updated_at = NOW()
-
         WHERE id = $8
-
         RETURNING *
         `,
         [
-          payload.name,
-          payload.description,
-          payload.price,
-          payload.stockQuantity,
-          payload.imageUrl || null,
-          payload.categoryId,
-          payload.isActive,
-          req.params.id,
+          data.name,
+          data.description,
+          data.price,
+          data.stockQuantity,
+          data.imageUrl || null,
+          data.categoryId,
+          data.isActive,
+          req.params.id
         ]
       );
 
-      if (result.rows.length === 0) {
+      if (!result.rows.length) {
         return res.status(404).json({
           success: false,
           message:
-            'Producto no encontrado',
+            'Producto no encontrado'
         });
       }
 
@@ -803,29 +739,29 @@ app.put(
         success: true,
         data: result.rows[0],
         message:
-          'Producto actualizado',
+          'Producto actualizado'
       });
 
     } catch (error) {
-      console.error(
-        'Error al actualizar producto:',
-        error
-      );
+      console.error(error);
 
       return res.status(500).json({
         success: false,
         message:
-          'Error en el servidor',
+          'Error en el servidor'
       });
     }
   }
 );
 
+// ======================================================
+// ELIMINAR PRODUCTO
+// ======================================================
+
 app.delete(
   '/api/products/:id',
   requireApiAuth,
   async (req, res) => {
-
     try {
       const result = await query(
         `
@@ -836,30 +772,27 @@ app.delete(
         [req.params.id]
       );
 
-      if (result.rows.length === 0) {
+      if (!result.rows.length) {
         return res.status(404).json({
           success: false,
           message:
-            'Producto no encontrado',
+            'Producto no encontrado'
         });
       }
 
       return res.json({
         success: true,
         message:
-          'Producto eliminado',
+          'Producto eliminado'
       });
 
     } catch (error) {
-      console.error(
-        'Error al eliminar producto:',
-        error
-      );
+      console.error(error);
 
       return res.status(500).json({
         success: false,
         message:
-          'Error en el servidor',
+          'Error en el servidor'
       });
     }
   }
@@ -872,7 +805,6 @@ app.delete(
 app.get(
   '/api/categories',
   async (req, res) => {
-
     try {
       const result = await query(
         `
@@ -884,19 +816,16 @@ app.get(
 
       return res.json({
         success: true,
-        data: result.rows,
+        data: result.rows
       });
 
     } catch (error) {
-      console.error(
-        'Error al obtener categorías:',
-        error
-      );
+      console.error(error);
 
       return res.status(500).json({
         success: false,
         message:
-          'Error en el servidor',
+          'Error en el servidor'
       });
     }
   }
@@ -906,47 +835,37 @@ app.post(
   '/api/categories',
   requireApiAuth,
   async (req, res) => {
-
-    const name =
-      (
-        req.body.name ||
-        req.body.nombre ||
-        ''
-      ).trim();
-
-    const description =
-      req.body.description ||
-      req.body.descripcion ||
-      '';
-
-    if (!name) {
-      return res.status(400).json({
-        success: false,
-        message:
-          'El nombre es requerido',
-      });
-    }
-
     try {
+      const name =
+        String(
+          req.body.name ||
+          req.body.nombre ||
+          ''
+        ).trim();
+
+      const description =
+        req.body.description ||
+        req.body.descripcion ||
+        '';
+
+      if (!name) {
+        return res.status(400).json({
+          success: false,
+          message:
+            'El nombre es requerido'
+        });
+      }
+
       const result = await query(
         `
         INSERT INTO categories
-        (
-          name,
-          description
-        )
-
-        VALUES
-        (
-          $1,
-          $2
-        )
-
+        (name, description)
+        VALUES ($1,$2)
         RETURNING *
         `,
         [
           name,
-          description,
+          description
         ]
       );
 
@@ -954,28 +873,24 @@ app.post(
         success: true,
         data: result.rows[0],
         message:
-          'Categoría creada',
+          'Categoría creada'
       });
 
     } catch (error) {
+      console.error(error);
 
       if (error.code === '23505') {
         return res.status(409).json({
           success: false,
           message:
-            'La categoría ya existe',
+            'La categoría ya existe'
         });
       }
-
-      console.error(
-        'Error al crear categoría:',
-        error
-      );
 
       return res.status(500).json({
         success: false,
         message:
-          'Error en el servidor',
+          'Error en el servidor'
       });
     }
   }
@@ -985,7 +900,6 @@ app.delete(
   '/api/categories/:id',
   requireApiAuth,
   async (req, res) => {
-
     try {
       const result = await query(
         `
@@ -996,30 +910,27 @@ app.delete(
         [req.params.id]
       );
 
-      if (result.rows.length === 0) {
+      if (!result.rows.length) {
         return res.status(404).json({
           success: false,
           message:
-            'Categoría no encontrada',
+            'Categoría no encontrada'
         });
       }
 
       return res.json({
         success: true,
         message:
-          'Categoría eliminada',
+          'Categoría eliminada'
       });
 
     } catch (error) {
-      console.error(
-        'Error al eliminar categoría:',
-        error
-      );
+      console.error(error);
 
       return res.status(500).json({
         success: false,
         message:
-          'Error en el servidor',
+          'Error en el servidor'
       });
     }
   }
@@ -1032,9 +943,8 @@ app.delete(
 app.post(
   '/api/orders',
   async (req, res) => {
-
     const customerName =
-      (
+      String(
         req.body.customer_name ||
         req.body.nombre_cliente ||
         ''
@@ -1062,17 +972,17 @@ app.post(
 
     const items =
       normalizeOrderItems(
-        req.body.items || []
+        req.body.items
       );
 
     if (
       !customerName ||
-      items.length === 0
+      !items.length
     ) {
       return res.status(400).json({
         success: false,
         message:
-          'Datos incompletos para crear el pedido',
+          'Datos incompletos para crear el pedido'
       });
     }
 
@@ -1080,17 +990,14 @@ app.post(
       await pool.connect();
 
     try {
-      await client.query(
-        'BEGIN'
-      );
+      await client.query('BEGIN');
 
       let totalAmount = 0;
 
       const validatedItems = [];
 
       for (const item of items) {
-
-        const productResult =
+        const result =
           await client.query(
             `
             SELECT
@@ -1099,26 +1006,21 @@ app.post(
               price,
               stock_quantity,
               is_active
-
             FROM products
-
             WHERE id = $1
-
             FOR UPDATE
             `,
             [item.productId]
           );
 
-        if (
-          productResult.rows.length === 0
-        ) {
+        if (!result.rows.length) {
           throw new Error(
             `Producto ${item.productId} no encontrado`
           );
         }
 
         const product =
-          productResult.rows[0];
+          result.rows[0];
 
         if (!product.is_active) {
           throw new Error(
@@ -1147,19 +1049,14 @@ app.post(
         validatedItems.push({
           productId:
             product.id,
-
           quantity:
             item.quantity,
-
           unitPrice,
-
           subtotal,
-
           itemNotes:
             item.itemNotes,
-
           itemSize:
-            item.itemSize,
+            item.itemSize
         });
       }
 
@@ -1176,18 +1073,8 @@ app.post(
             status,
             total_amount
           )
-
           VALUES
-          (
-            $1,
-            $2,
-            $3,
-            $4,
-            $5,
-            'pendiente',
-            $6
-          )
-
+          ($1,$2,$3,$4,$5,'pendiente',$6)
           RETURNING *
           `,
           [
@@ -1196,18 +1083,14 @@ app.post(
             customerEmail,
             customerAddress,
             notes,
-            totalAmount,
+            totalAmount
           ]
         );
 
       const order =
         orderResult.rows[0];
 
-      for (
-        const item
-        of validatedItems
-      ) {
-
+      for (const item of validatedItems) {
         await client.query(
           `
           INSERT INTO order_items
@@ -1220,17 +1103,8 @@ app.post(
             item_notes,
             item_size
           )
-
           VALUES
-          (
-            $1,
-            $2,
-            $3,
-            $4,
-            $5,
-            $6,
-            $7
-          )
+          ($1,$2,$3,$4,$5,$6,$7)
           `,
           [
             order.id,
@@ -1239,67 +1113,51 @@ app.post(
             item.unitPrice,
             item.subtotal,
             item.itemNotes,
-            item.itemSize,
+            item.itemSize
           ]
         );
 
         await client.query(
           `
           UPDATE products
-
           SET
             stock_quantity =
               stock_quantity - $1,
-
             updated_at = NOW()
-
           WHERE id = $2
           `,
           [
             item.quantity,
-            item.productId,
+            item.productId
           ]
         );
       }
 
-      await client.query(
-        'COMMIT'
-      );
+      await client.query('COMMIT');
 
       return res.status(201).json({
         success: true,
-
         data: {
-          order_id:
-            order.id,
-
+          order_id: order.id,
           total_amount:
             totalAmount,
-
           status:
-            order.status,
+            order.status
         },
-
         message:
-          'Pedido reservado correctamente',
+          'Pedido reservado correctamente'
       });
 
     } catch (error) {
+      await client.query('ROLLBACK');
 
-      await client.query(
-        'ROLLBACK'
-      );
-
-      console.error(
-        'Error al crear pedido:',
-        error
-      );
+      console.error(error);
 
       return res.status(400).json({
         success: false,
         message:
           error.message ||
-          'No se pudo crear el pedido',
+          'No se pudo crear el pedido'
       });
 
     } finally {
@@ -1316,7 +1174,6 @@ app.get(
   '/api/orders',
   requireApiAuth,
   async (req, res) => {
-
     try {
       const result =
         await query(
@@ -1324,14 +1181,10 @@ app.get(
           SELECT
             o.*,
             COUNT(oi.id)::int AS item_count
-
           FROM orders o
-
           LEFT JOIN order_items oi
             ON oi.order_id = o.id
-
           GROUP BY o.id
-
           ORDER BY
             o.created_at DESC,
             o.id DESC
@@ -1340,126 +1193,93 @@ app.get(
 
       return res.json({
         success: true,
-        data: result.rows,
+        data: result.rows
       });
 
     } catch (error) {
-      console.error(
-        'Error al obtener pedidos:',
-        error
-      );
+      console.error(error);
 
       return res.status(500).json({
         success: false,
         message:
-          'Error en el servidor',
+          'Error en el servidor'
       });
     }
   }
 );
 
 // ======================================================
-// CONSULTA PÚBLICA DE PEDIDO
+// PEDIDO PÚBLICO
 // ======================================================
 
 app.get(
   '/api/orders/public',
   async (req, res) => {
+    const name =
+      (req.query.name || '').trim();
 
-    const customerName =
-      (req.query.name || '')
-        .trim();
+    const phone =
+      (req.query.phone || '').trim();
 
-    const customerPhone =
-      (req.query.phone || '')
-        .trim();
-
-    if (
-      !customerName ||
-      !customerPhone
-    ) {
+    if (!name || !phone) {
       return res.status(400).json({
         success: false,
         message:
-          'El nombre y el teléfono son requeridos',
+          'El nombre y teléfono son requeridos'
       });
     }
 
     try {
-      const orderResult =
+      const result =
         await query(
           `
-          SELECT
-            id,
-            customer_name,
-            customer_phone,
-            customer_email,
-            customer_address,
-            notes,
-            status,
-            total_amount,
-            created_at
-
+          SELECT *
           FROM orders
-
           WHERE
             LOWER(customer_name) =
               LOWER($1)
-
             AND customer_phone = $2
-
           ORDER BY
             created_at DESC,
             id DESC
-
           LIMIT 1
           `,
-          [
-            customerName,
-            customerPhone,
-          ]
+          [name, phone]
         );
 
-      if (
-        orderResult.rows.length === 0
-      ) {
+      if (!result.rows.length) {
         return res.status(404).json({
           success: false,
           message:
-            'Pedido no encontrado',
+            'Pedido no encontrado'
         });
       }
 
       return res.json({
         success: true,
-        data:
-          orderResult.rows[0],
+        data: result.rows[0]
       });
 
     } catch (error) {
-      console.error(
-        'Error al consultar estado público del pedido:',
-        error
-      );
+      console.error(error);
 
       return res.status(500).json({
         success: false,
         message:
-          'Error en el servidor',
+          'Error en el servidor'
       });
     }
   }
 );
 
 // ======================================================
-// DETALLE DE PEDIDO
+// DETALLE PEDIDO
 // ======================================================
 
 app.get(
   '/api/orders/:id',
   requireApiAuth,
   async (req, res) => {
-
     try {
       const orderResult =
         await query(
@@ -1471,18 +1291,13 @@ app.get(
           [req.params.id]
         );
 
-      if (
-        orderResult.rows.length === 0
-      ) {
+      if (!orderResult.rows.length) {
         return res.status(404).json({
           success: false,
           message:
-            'Pedido no encontrado',
+            'Pedido no encontrado'
         });
       }
-
-      const order =
-        orderResult.rows[0];
 
       const itemsResult =
         await query(
@@ -1491,14 +1306,10 @@ app.get(
             oi.*,
             p.name AS product_name,
             p.image_url AS product_image_url
-
           FROM order_items oi
-
           LEFT JOIN products p
             ON p.id = oi.product_id
-
           WHERE oi.order_id = $1
-
           ORDER BY oi.id ASC
           `,
           [req.params.id]
@@ -1506,40 +1317,35 @@ app.get(
 
       return res.json({
         success: true,
-
         data: {
-          ...order,
+          ...orderResult.rows[0],
           items:
-            itemsResult.rows,
-        },
+            itemsResult.rows
+        }
       });
 
     } catch (error) {
-      console.error(
-        'Error al obtener detalle del pedido:',
-        error
-      );
+      console.error(error);
 
       return res.status(500).json({
         success: false,
         message:
-          'Error en el servidor',
+          'Error en el servidor'
       });
     }
   }
 );
 
 // ======================================================
-// ESTADO DEL PEDIDO
+// CAMBIAR ESTADO PEDIDO
 // ======================================================
 
 app.put(
   '/api/orders/:id/status',
   requireApiAuth,
   async (req, res) => {
-
     const status =
-      (
+      String(
         req.body.status ||
         req.body.estado ||
         ''
@@ -1549,14 +1355,14 @@ app.put(
       'pendiente',
       'confirmado',
       'completado',
-      'cancelado',
+      'cancelado'
     ];
 
     if (!allowed.includes(status)) {
       return res.status(400).json({
         success: false,
         message:
-          'Estado inválido',
+          'Estado inválido'
       });
     }
 
@@ -1565,48 +1371,41 @@ app.put(
         await query(
           `
           UPDATE orders
-
           SET
             status = $1,
             updated_at = NOW()
-
           WHERE id = $2
-
           RETURNING *
           `,
           [
             status,
-            req.params.id,
+            req.params.id
           ]
         );
 
-      if (
-        result.rows.length === 0
-      ) {
+      if (!result.rows.length) {
         return res.status(404).json({
           success: false,
           message:
-            'Pedido no encontrado',
+            'Pedido no encontrado'
         });
       }
 
       return res.json({
         success: true,
-        data: result.rows[0],
+        data:
+          result.rows[0],
         message:
-          'Estado actualizado',
+          'Estado actualizado'
       });
 
     } catch (error) {
-      console.error(
-        'Error al actualizar pedido:',
-        error
-      );
+      console.error(error);
 
       return res.status(500).json({
         success: false,
         message:
-          'Error en el servidor',
+          'Error en el servidor'
       });
     }
   }
@@ -1620,7 +1419,6 @@ app.get(
   '/api/customers',
   requireApiAuth,
   async (req, res) => {
-
     try {
       const result =
         await query(
@@ -1634,17 +1432,15 @@ app.get(
             COALESCE(
               SUM(total_amount),
               0
-            )::numeric(12,2) AS total_spent,
-            MAX(created_at) AS last_order_at
-
+            ) AS total_spent,
+            MAX(created_at)
+              AS last_order_at
           FROM orders
-
           GROUP BY
             customer_name,
             customer_phone,
             customer_email,
             customer_address
-
           ORDER BY
             last_order_at DESC,
             customer_name ASC
@@ -1653,19 +1449,17 @@ app.get(
 
       return res.json({
         success: true,
-        data: result.rows,
+        data:
+          result.rows
       });
 
     } catch (error) {
-      console.error(
-        'Error al obtener clientes:',
-        error
-      );
+      console.error(error);
 
       return res.status(500).json({
         success: false,
         message:
-          'Error en el servidor',
+          'Error en el servidor'
       });
     }
   }
@@ -1675,22 +1469,18 @@ app.delete(
   '/api/customers/:name',
   requireApiAuth,
   async (req, res) => {
-
     try {
-      const customerName =
+      const name =
         req.params.name;
 
-      const customerPhone =
-        (req.query.phone || '')
-          .trim();
+      const phone =
+        (req.query.phone || '').trim();
 
-      const customerEmail =
-        (req.query.email || '')
-          .trim();
+      const email =
+        (req.query.email || '').trim();
 
-      const customerAddress =
-        (req.query.address || '')
-          .trim();
+      const address =
+        (req.query.address || '').trim();
 
       let sql =
         `
@@ -1698,32 +1488,24 @@ app.delete(
         WHERE customer_name = $1
         `;
 
-      const params = [
-        customerName,
-      ];
+      const params = [name];
 
-      if (customerPhone) {
-        params.push(
-          customerPhone
-        );
+      if (phone) {
+        params.push(phone);
 
         sql +=
           ` AND customer_phone = $${params.length}`;
       }
 
-      if (customerEmail) {
-        params.push(
-          customerEmail
-        );
+      if (email) {
+        params.push(email);
 
         sql +=
           ` AND customer_email = $${params.length}`;
       }
 
-      if (customerAddress) {
-        params.push(
-          customerAddress
-        );
+      if (address) {
+        params.push(address);
 
         sql +=
           ` AND customer_address = $${params.length}`;
@@ -1731,33 +1513,27 @@ app.delete(
 
       const result =
         await query(
-          sql +
-          ' RETURNING id',
+          sql + ' RETURNING id',
           params
         );
 
       return res.json({
         success: true,
-
         message:
-          'Cliente eliminado junto con sus pedidos',
-
+          'Cliente eliminado',
         data: {
           deleted_orders:
-            result.rows.length,
-        },
+            result.rows.length
+        }
       });
 
     } catch (error) {
-      console.error(
-        'Error al eliminar cliente:',
-        error
-      );
+      console.error(error);
 
       return res.status(500).json({
         success: false,
         message:
-          'Error en el servidor',
+          'Error en el servidor'
       });
     }
   }
@@ -1771,22 +1547,17 @@ app.get(
   '/api/dashboard',
   requireApiAuth,
   async (req, res) => {
-
     try {
       const [
-        productsTotal,
-        productsActive,
-        productsLowStock,
-        ordersTotal,
-        ordersPending,
-        revenue,
+        total,
+        active,
+        lowStock,
+        orders,
+        pending,
+        revenue
       ] = await Promise.all([
-
         query(
-          `
-          SELECT COUNT(*)::int AS total
-          FROM products
-          `
+          `SELECT COUNT(*)::int AS total FROM products`
         ),
 
         query(
@@ -1801,17 +1572,13 @@ app.get(
           `
           SELECT COUNT(*)::int AS total
           FROM products
-          WHERE
-            stock_quantity > 0
+          WHERE stock_quantity > 0
             AND stock_quantity <= 3
           `
         ),
 
         query(
-          `
-          SELECT COUNT(*)::int AS total
-          FROM orders
-          `
+          `SELECT COUNT(*)::int AS total FROM orders`
         ),
 
         query(
@@ -1824,94 +1591,78 @@ app.get(
 
         query(
           `
-          SELECT
-            COALESCE(
-              SUM(total_amount),
-              0
-            )::numeric(12,2) AS total
-
+          SELECT COALESCE(
+            SUM(total_amount),0
+          ) AS total
           FROM orders
           `
-        ),
+        )
       ]);
 
       return res.json({
         success: true,
-
         data: {
           products_total:
-            productsTotal.rows[0].total,
+            total.rows[0].total,
 
           products_active:
-            productsActive.rows[0].total,
+            active.rows[0].total,
 
           products_low_stock:
-            productsLowStock.rows[0].total,
+            lowStock.rows[0].total,
 
           orders_total:
-            ordersTotal.rows[0].total,
+            orders.rows[0].total,
 
           orders_pending:
-            ordersPending.rows[0].total,
+            pending.rows[0].total,
 
           total_revenue:
             Number(
               revenue.rows[0].total
-            ),
-        },
+            )
+        }
       });
 
     } catch (error) {
-      console.error(
-        'Error al obtener dashboard:',
-        error
-      );
+      console.error(error);
 
       return res.status(500).json({
         success: false,
         message:
-          'Error en el servidor',
+          'Error en el servidor'
       });
     }
   }
 );
 
 // ======================================================
-// CUENTA ADMINISTRADOR
+// CAMBIAR CUENTA ADMIN
 // ======================================================
 
 app.put(
   '/api/admin/account',
   requireApiAuth,
   async (req, res) => {
-
     const currentPassword =
-      req.body.current_password ||
-      req.body.contrasena_actual ||
-      '';
+      req.body.current_password || '';
 
     const newUsername =
-      (
-        req.body.new_username ||
-        req.body.nuevo_usuario ||
-        ''
+      String(
+        req.body.new_username || ''
       ).trim();
 
     const newPassword =
-      req.body.new_password ||
-      req.body.nueva_contrasena ||
-      '';
+      req.body.new_password || '';
 
     const confirmPassword =
-      req.body.confirm_password ||
-      req.body.confirmar_contrasena ||
-      '';
+      req.body.confirm_password || '';
 
     if (!currentPassword) {
       return res.status(400).json({
         success: false,
         message:
-          'La contraseña actual es requerida',
+          'La contraseña actual es requerida'
       });
     }
 
@@ -1922,7 +1673,7 @@ app.put(
       return res.status(400).json({
         success: false,
         message:
-          'Debes indicar un nuevo usuario o una nueva contraseña',
+          'Debes indicar un nuevo usuario o contraseña'
       });
     }
 
@@ -1933,102 +1684,81 @@ app.put(
       return res.status(400).json({
         success: false,
         message:
-          'Las contraseñas no coinciden',
+          'Las contraseñas no coinciden'
       });
     }
 
-    const client =
-      await pool.connect();
-
     try {
-      await client.query(
-        'BEGIN'
-      );
-
-      const userResult =
-        await client.query(
+      const result =
+        await query(
           `
-          SELECT
-            id,
-            username,
-            password
-
+          SELECT *
           FROM users
-
           WHERE id = $1
           `,
           [req.session.user.id]
         );
 
-      if (
-        userResult.rows.length === 0
-      ) {
-        throw new Error(
-          'Usuario no encontrado'
-        );
+      if (!result.rows.length) {
+        return res.status(404).json({
+          success: false,
+          message:
+            'Usuario no encontrado'
+        });
       }
 
       const user =
-        userResult.rows[0];
+        result.rows[0];
 
-      const matches =
+      const valid =
         await bcrypt.compare(
           currentPassword,
           user.password
         );
 
-      if (!matches) {
-        throw new Error(
-          'La contraseña actual es incorrecta'
-        );
+      if (!valid) {
+        return res.status(400).json({
+          success: false,
+          message:
+            'La contraseña actual es incorrecta'
+        });
       }
 
-      const nextUsername =
+      const username =
         newUsername ||
         user.username;
 
-      const nextPassword =
+      const password =
         newPassword
           ? await bcrypt.hash(
               newPassword,
               10
             )
-          : null;
+          : user.password;
 
-      const updateResult =
-        await client.query(
+      const updated =
+        await query(
           `
           UPDATE users
-
           SET
             username = $1,
-            password =
-              COALESCE($2, password),
+            password = $2,
             updated_at = NOW()
-
           WHERE id = $3
-
-          RETURNING
-            id,
-            username
+          RETURNING id, username
           `,
           [
-            nextUsername,
-            nextPassword,
-            user.id,
+            username,
+            password,
+            user.id
           ]
         );
 
-      await client.query(
-        'COMMIT'
-      );
-
       req.session.user = {
         id:
-          updateResult.rows[0].id,
-
+          updated.rows[0].id,
         username:
-          updateResult.rows[0].username,
+          updated.rows[0].username
       };
 
       return res.json({
@@ -2036,67 +1766,92 @@ app.put(
         data:
           req.session.user,
         message:
-          'Cuenta actualizada correctamente',
+          'Cuenta actualizada correctamente'
       });
 
     } catch (error) {
-
-      await client.query(
-        'ROLLBACK'
-      );
+      console.error(error);
 
       if (error.code === '23505') {
         return res.status(409).json({
           success: false,
           message:
-            'El usuario ya existe',
+            'El usuario ya existe'
         });
       }
 
-      console.error(
-        'Error al actualizar cuenta:',
-        error
-      );
-
-      return res.status(400).json({
+      return res.status(500).json({
         success: false,
         message:
-          error.message ||
-          'No se pudo actualizar la cuenta',
+          'Error al actualizar la cuenta'
       });
-
-    } finally {
-      client.release();
     }
   }
 );
 
 // ======================================================
+// SUBIR IMAGEN
+// ======================================================
+
+app.post(
+  '/api/upload-image',
+  requireApiAuth,
+  upload.single('image'),
+  (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message:
+          'No se subió ninguna imagen'
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        image_url:
+          `/images/uploads/${req.file.filename}`
+      }
+    });
+  }
+);
+
 // ======================================================
 // ARCHIVOS ESTÁTICOS
 // ======================================================
 
-app.use(express.static(publicDir));
+app.use(
+  express.static(publicDir)
+);
 
 // ======================================================
-// MANEJO DE ERRORES
+// ERROR GENERAL
 // ======================================================
 
-app.use((err, req, res, next) => {
-  console.error('Error inesperado:', err);
+app.use(
+  (err, req, res, next) => {
+    console.error(
+      'Error inesperado:',
+      err
+    );
 
-  if (err instanceof multer.MulterError) {
-    return res.status(400).json({
+    if (
+      err instanceof multer.MulterError
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: err.message
+      });
+    }
+
+    return res.status(500).json({
       success: false,
-      message: err.message,
+      message:
+        err.message ||
+        'Error interno del servidor'
     });
   }
-
-  return res.status(500).json({
-    success: false,
-    message: err.message || 'Error interno del servidor',
-  });
-});
+);
 
 // ======================================================
 // VERCEL
