@@ -2072,56 +2072,34 @@ app.put(
 );
 
 // ======================================================
+// ======================================================
 // ARCHIVOS ESTÁTICOS
 // ======================================================
 
-app.use(
-  express.static(publicDir)
-);
+app.use(express.static(publicDir));
 
 // ======================================================
 // MANEJO DE ERRORES
 // ======================================================
 
-app.use(
-  (err, req, res, next) => {
+app.use((err, req, res, next) => {
+  console.error('Error inesperado:', err);
 
-    if (
-      err instanceof multer.MulterError
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: err.message,
-      });
-    }
-
-    if (err) {
-      console.error(
-        'Error inesperado:',
-        err
-      );
-
-      return res.status(500).json({
-        success: false,
-        message:
-          'Error interno del servidor',
-      });
-    }
-
-    return next();
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({
+      success: false,
+      message: err.message,
+    });
   }
-);
 
-// ======================================================
-// SERVIDOR LOCAL / VERCEL
-// ======================================================
-
-if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(
-      `🚀 Servidor Amaranta Accesorios corriendo en http://localhost:${PORT}`
-    );
+  return res.status(500).json({
+    success: false,
+    message: err.message || 'Error interno del servidor',
   });
-}
+});
+
+// ======================================================
+// VERCEL
+// ======================================================
 
 module.exports = app;
