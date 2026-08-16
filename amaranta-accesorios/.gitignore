@@ -13,3 +13,12 @@ public/images/uploads/*
 # Sistema operativo
 .DS_Store
 Thumbs.db
+
+NODE_ENV=development
+PORT=3000
+DATABASE_URL=postgresql://postgres:admin@localhost:5432/amaranta_accesorios
+SESSION_SECRET=amaranta_secret_2026
+##DATABASE_URL=postgresql://postgres:admin@localhost:5432/amaranta_accesorios
+DATABASE_URL="postgres://fc69155b0bfa5f222c2d218d5cc503f3b7140ea9151489fbfeee53c755e7005c:sk_Jf2fpwm8gsNDwtvSGO0Fo@db.prisma.io:5432/postgres?sslmode=require"
+POSTGRES_URL="postgres://fc69155b0bfa5f222c2d218d5cc503f3b7140ea9151489fbfeee53c755e7005c:sk_Jf2fpwm8gsNDwtvSGO0Fo@db.prisma.io:5432/postgres?sslmode=require"
+PRISMA_DATABASE_URL="postgres://fc69155b0bfa5f222c2d218d5cc503f3b7140ea9151489fbfeee53c755e7005c:sk_Jf2fpwm8gsNDwtvSGO0Fo@db.prisma.io:5432/postgres?sslmode=require"
