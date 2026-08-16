@@ -2118,13 +2118,7 @@ app.use(
 );
 
 // ======================================================
-// SERVIDOR LOCAL
-// ======================================================
-//
-// Vercel no necesita app.listen().
-// Solo se ejecuta cuando iniciamos:
-// npm start
-// npm run dev
+// SERVIDOR LOCAL / VERCEL
 // ======================================================
 
 if (require.main === module) {
@@ -2132,15 +2126,9 @@ if (require.main === module) {
     console.log(
       `🚀 Servidor Amaranta Accesorios corriendo en http://localhost:${PORT}`
     );
-
-    console.log(
-      `📊 Entorno: ${process.env.NODE_ENV || 'development'}`
-    );
   });
 }
 
-// ======================================================
-// EXPORTAR EXPRESS PARA VERCEL
-// ======================================================
-
+// IMPORTANTE:
+// Vercel necesita recibir la instancia de Express.
 module.exports = app;

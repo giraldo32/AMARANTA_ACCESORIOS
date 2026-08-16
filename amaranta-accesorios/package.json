@@ -7,7 +7,7 @@
     "start": "node server/server.js",
     "dev": "nodemon server/server.js",
     "init-db": "node database/init.js",
-    "build": "node -e \"console.log('No build step required')\""
+    "build": "node -e \"console.log('Build de Amaranta Accesorios completado')\""
   },
   "keywords": [
     "accesorios",
