@@ -8,7 +8,7 @@ const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const multer = require('multer');
-const { query, pool } = require('./db');
+const { query, pool } = require('../amaranta-accesorios/server/db');
 
 const app = express();
 
