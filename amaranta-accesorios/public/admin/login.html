@@ -2,227 +2,210 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
-
-  <title>Acceso Administrador | Amaranta Accesorios</title>
+  <title>AMARANTA ACCESORIOS - Login</title>
 
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
     rel="stylesheet"
   >
 
-  <style>
-    body {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f8f1f5;
-    }
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+    rel="stylesheet"
+  >
 
-    .login-card {
-      width: 100%;
-      max-width: 420px;
-      border: none;
-      border-radius: 20px;
-      box-shadow: 0 10px 35px rgba(0,0,0,.10);
-    }
-
-    .brand {
-      font-weight: 700;
-      color: #8d4165;
-      font-size: 28px;
-    }
-
-    .btn-login {
-      background: #8d4165;
-      border-color: #8d4165;
-      color: white;
-    }
-
-    .btn-login:hover {
-      background: #71334f;
-      border-color: #71334f;
-      color: white;
-    }
-  </style>
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 
-<body>
+<body class="amaranta-shell">
 
-  <div class="container px-3">
+<main class="min-vh-100 d-flex align-items-center justify-content-center p-3">
 
-    <div class="card login-card mx-auto">
+  <div class="card shadow-lg border-0"
+       style="width:100%;max-width:430px;border-radius:24px;">
 
-      <div class="card-body p-4 p-md-5">
+    <div class="card-body p-4 p-md-5">
 
-        <div class="text-center mb-4">
+      <div class="text-center mb-4">
 
-          <div class="brand">
-            Amaranta Accesorios
-          </div>
+        <div class="brand-mark mx-auto mb-3"
+             style="width:64px;height:64px;">
+          <i class="bi bi-gem text-white fs-3"></i>
+        </div>
 
-          <p class="text-muted mb-0">
-            Panel de administración
-          </p>
+        <h1 class="h3 fw-bold mb-1">
+          AMARANTA
+        </h1>
+
+        <p class="text-body-secondary">
+          Panel de administración
+        </p>
+
+      </div>
+
+      <div id="loginError"
+           class="alert alert-danger d-none">
+      </div>
+
+      <form id="loginForm">
+
+        <div class="mb-3">
+
+          <label class="form-label">
+            Usuario
+          </label>
+
+          <input
+            type="text"
+            class="form-control"
+            id="username"
+            name="username"
+            autocomplete="username"
+            required
+          >
 
         </div>
 
-        <div
-          id="loginError"
-          class="alert alert-danger d-none"
-        ></div>
+        <div class="mb-4">
 
-        <form id="loginForm">
+          <label class="form-label">
+            Contraseña
+          </label>
 
-          <div class="mb-3">
-
-            <label
-              for="username"
-              class="form-label"
-            >
-              Usuario
-            </label>
-
-            <input
-              type="text"
-              class="form-control"
-              id="username"
-              name="username"
-              autocomplete="username"
-              required
-            >
-
-          </div>
-
-          <div class="mb-4">
-
-            <label
-              for="password"
-              class="form-label"
-            >
-              Contraseña
-            </label>
-
-            <input
-              type="password"
-              class="form-control"
-              id="password"
-              name="password"
-              autocomplete="current-password"
-              required
-            >
-
-          </div>
-
-          <button
-            type="submit"
-            id="loginBtn"
-            class="btn btn-login w-100"
+          <input
+            type="password"
+            class="form-control"
+            id="password"
+            name="password"
+            autocomplete="current-password"
+            required
           >
-            Iniciar sesión
-          </button>
-
-        </form>
-
-        <div class="text-center mt-4">
-
-          <a
-            href="/"
-            class="text-decoration-none"
-          >
-            ← Volver a la tienda
-          </a>
 
         </div>
+
+        <button
+          type="submit"
+          class="btn btn-amaranta w-100"
+          id="loginBtn"
+        >
+          <i class="bi bi-box-arrow-in-right me-1"></i>
+          Iniciar sesión
+        </button>
+
+      </form>
+
+      <div class="text-center mt-4">
+
+        <a href="/" class="text-decoration-none">
+          <i class="bi bi-arrow-left me-1"></i>
+          Volver al catálogo
+        </a>
 
       </div>
 
     </div>
-
   </div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
+</main>
 
-      const form = document.getElementById('loginForm');
-      const errorBox = document.getElementById('loginError');
-      const button = document.getElementById('loginBtn');
+<script>
 
-      form.addEventListener('submit', async (event) => {
+const form = document.getElementById('loginForm');
+const errorBox = document.getElementById('loginError');
+const button = document.getElementById('loginBtn');
 
-        event.preventDefault();
+form.addEventListener('submit', async (event) => {
 
-        errorBox.classList.add('d-none');
-        errorBox.textContent = '';
+  event.preventDefault();
 
-        button.disabled = true;
-        button.textContent = 'Ingresando...';
+  errorBox.classList.add('d-none');
+  errorBox.textContent = '';
 
-        const username =
-          document.getElementById('username').value.trim();
+  button.disabled = true;
+  button.innerHTML =
+    '<span class="spinner-border spinner-border-sm me-2"></span>Ingresando...';
 
-        const password =
-          document.getElementById('password').value;
+  const username =
+    document.getElementById('username').value.trim();
 
-        try {
+  const password =
+    document.getElementById('password').value;
 
-          const response = await fetch('/api/login', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              username,
-              password
-            })
-          });
+  try {
 
-          const text = await response.text();
+    const response = await fetch('/api/login', {
 
-          let data = {};
+      method: 'POST',
 
-          try {
-            data = text ? JSON.parse(text) : {};
-          } catch {
-            throw new Error(
-              'El servidor devolvió una respuesta inválida.'
-            );
-          }
+      credentials: 'same-origin',
 
-          if (!response.ok || !data.success) {
-            throw new Error(
-              data.message ||
-              `Error HTTP ${response.status}`
-            );
-          }
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
 
-          window.location.href =
-            '/admin/dashboard.html';
-
-        } catch (error) {
-
-          console.error('Error de login:', error);
-
-          errorBox.textContent =
-            error.message ||
-            'No se pudo iniciar sesión.';
-
-          errorBox.classList.remove('d-none');
-
-          button.disabled = false;
-          button.textContent = 'Iniciar sesión';
-        }
-
-      });
+      body: JSON.stringify({
+        username,
+        password
+      })
 
     });
-  </script>
+
+    const contentType =
+      response.headers.get('content-type') || '';
+
+    let data;
+
+    if (contentType.includes('application/json')) {
+
+      data = await response.json();
+
+    } else {
+
+      const text = await response.text();
+
+      throw new Error(
+        `Error ${response.status}: ${
+          text || 'Respuesta vacía del servidor'
+        }`
+      );
+
+    }
+
+    if (!response.ok || !data.success) {
+
+      throw new Error(
+        data.message ||
+        'Usuario o contraseña incorrectos'
+      );
+
+    }
+
+    window.location.href =
+      '/admin/dashboard.html';
+
+  } catch (error) {
+
+    console.error('Error de login:', error);
+
+    errorBox.textContent =
+      error.message ||
+      'No se pudo iniciar sesión';
+
+    errorBox.classList.remove('d-none');
+
+    button.disabled = false;
+
+    button.innerHTML =
+      '<i class="bi bi-box-arrow-in-right me-1"></i>Iniciar sesión';
+
+  }
+
+});
+
+</script>
 
 </body>
 </html>
