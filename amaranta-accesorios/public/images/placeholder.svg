@@ -1,0 +1,18 @@
+<svg width="800" height="800" viewBox="0 0 800 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="paint0_linear" x1="140" y1="120" x2="660" y2="680" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#DFF6FF"/>
+      <stop offset="1" stop-color="#87CEEB"/>
+    </linearGradient>
+    <linearGradient id="paint1_linear" x1="220" y1="220" x2="580" y2="580" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F4C75"/>
+      <stop offset="1" stop-color="#1976A5"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="800" rx="80" fill="url(#paint0_linear)"/>
+  <circle cx="400" cy="330" r="150" fill="white" fill-opacity="0.4"/>
+  <path d="M400 210L500 330L400 500L300 330L400 210Z" fill="url(#paint1_linear)"/>
+  <path d="M400 245L455 330L400 445L345 330L400 245Z" fill="white" fill-opacity="0.55"/>
+  <text x="400" y="620" text-anchor="middle" fill="#0F4C75" font-family="Arial, sans-serif" font-size="42" font-weight="700">AMARANTA ACCESORIOS</text>
+  <text x="400" y="665" text-anchor="middle" fill="#0F4C75" font-family="Arial, sans-serif" font-size="24">Imagen de referencia</text>
+</svg>
