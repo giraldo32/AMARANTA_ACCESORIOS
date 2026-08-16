@@ -1820,41 +1820,30 @@ app.post(
 // ARCHIVOS ESTÁTICOS
 // ======================================================
 
-app.use(
-  express.static(publicDir)
-);
+app.use(express.static(publicDir));
 
 // ======================================================
-// ERROR GENERAL
+// MANEJO DE ERRORES
 // ======================================================
 
-app.use(
-  (err, req, res, next) => {
-    console.error(
-      'Error inesperado:',
-      err
-    );
+app.use((err, req, res, next) => {
+  console.error('Error inesperado:', err);
 
-    if (
-      err instanceof multer.MulterError
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: err.message
-      });
-    }
-
-    return res.status(500).json({
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({
       success: false,
-      message:
-        err.message ||
-        'Error interno del servidor'
+      message: err.message
     });
   }
-);
+
+  return res.status(500).json({
+    success: false,
+    message: err.message || 'Error interno del servidor'
+  });
+});
 
 // ======================================================
-// VERCEL
+// EXPORTACIÓN PARA VERCEL
 // ======================================================
 
 module.exports = app;
