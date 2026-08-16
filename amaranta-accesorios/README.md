@@ -266,4 +266,4 @@ Proyecto desarrollado para AMARANTA ACCESORIOS. Todos los derechos reservados.
 
 Desarrollado con ❤️ para AMARANTA ACCESORIOS.
 
-"Accesorios que realzan tu estilo, calidad, tendencia y amor en cada detalle."
+"Accesorios que realzan tu estilo, calidad, tendencia y amor en cada detalle."..
