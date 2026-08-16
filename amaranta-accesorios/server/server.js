@@ -1848,10 +1848,6 @@ app.use((err, req, res, next) => {
 
 module.exports = app;
 
-// ======================================================
-// SERVIDOR LOCAL
-// ======================================================
-
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
 
