@@ -88,7 +88,7 @@ function requireAuth(req, res, next) {
 
 app.get('/whatsapp', (req, res) => {
   const text = req.query.text || 'Hola Amaranta Accesorios';
-  const phone = process.env.WHATSAPP_NUMBER || '573000000000';
+  const phone = process.env.WHATSAPP_NUMBER || '573113353145';
   res.redirect(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`);
 });
 
