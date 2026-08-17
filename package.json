@@ -2,10 +2,11 @@
   "name": "amaranta-accesorios",
   "version": "1.0.0",
   "description": "Sistema de catálogo de productos con carrito de compras y panel de administración",
-  "main": "server/server.js",
+  "main": "amaranta-accesorios/server/server.js",
   "scripts": {
-    "start": "node server/server.js",
-    "dev": "nodemon server/server.js"
+    "start": "node amaranta-accesorios/server/server.js",
+    "dev": "nodemon amaranta-accesorios/server/server.js",
+    "init-db": "node database/init.js"
   },
   "dependencies": {
     "@vercel/node": "^5.0.0",
